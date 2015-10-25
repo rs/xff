@@ -1,7 +1,6 @@
 package xff
 
 import (
-	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -47,25 +46,21 @@ func Parse(ipList string) string {
 // the resolved remote address.
 func GetRemoteAddr(r *http.Request) string {
 	xff := r.Header.Get("X-Forwarded-For")
-	xfp := r.Header.Get("X-Forwarded-Port")
+	port := r.Header.Get("X-Forwarded-Port")
 	var ip string
 	if xff != "" {
 		ip = Parse(xff)
 	}
-	var port string
-	if xfp != "" {
-		port = Parse(xfp)
-	}
 	remoteAddr := r.RemoteAddr
 	if ip != "" && port != "" {
-		remoteAddr = fmt.Sprintf("%s:%s", ip, port)
+		remoteAddr = net.JoinHostPort(ip, port)
 	} else {
 		oip, oport, err := net.SplitHostPort(r.RemoteAddr)
 		if err == nil {
 			if ip != "" {
-				remoteAddr = fmt.Sprintf("%s:%s", ip, oport)
+				remoteAddr = net.JoinHostPort(ip, oport)
 			} else if port != "" {
-				remoteAddr = fmt.Sprintf("%s:%s", oip, port)
+				remoteAddr = net.JoinHostPort(oip, port)
 			}
 		}
 	}

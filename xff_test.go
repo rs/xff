@@ -1,6 +1,7 @@
 package xff
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,6 +14,11 @@ func TestParse_none(t *testing.T) {
 
 func TestParse_localhost(t *testing.T) {
 	res := Parse("127.0.0.1")
+	assert.Equal(t, "", res)
+}
+
+func TestParse_localnet(t *testing.T) {
+	res := Parse("fe80::2acf:e9ff:fe16:b5cd")
 	assert.Equal(t, "", res)
 }
 
@@ -59,4 +65,20 @@ func TestParse_multi_with_invalid2(t *testing.T) {
 func TestParse_multi_with_invalid_sioux(t *testing.T) {
 	res := Parse("192.168.110.162, 190.57.149.90, 123#1#2#3")
 	assert.Equal(t, "190.57.149.90", res)
+}
+
+func TestGetRemoteAddr(t *testing.T) {
+	assert.Equal(t, "1.2.3.4:1234", GetRemoteAddr(&http.Request{RemoteAddr: "1.2.3.4:1234"}))
+	assert.Equal(t, "[2001:db8:0:1:1:1:1:1]:1234", GetRemoteAddr(&http.Request{RemoteAddr: "[2001:db8:0:1:1:1:1:1]:1234"}))
+	assert.Equal(t, "[2001:db8:0:1:1:1:1:1]:1234", GetRemoteAddr(&http.Request{
+		RemoteAddr: "1.2.3.4:1234",
+		Header:     http.Header{"X-Forwarded-For": []string{"2001:db8:0:1:1:1:1:1"}},
+	}))
+	assert.Equal(t, "1.2.3.4:4321", GetRemoteAddr(&http.Request{
+		RemoteAddr: "1.2.3.4:1234",
+		Header: http.Header{
+			"X-Forwarded-Port": []string{"4321"},
+		},
+	}))
+
 }
